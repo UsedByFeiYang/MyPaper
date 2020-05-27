@@ -1,4 +1,3 @@
-import DataPreprocess
 from DataPreprocess import *
 import torch
 from Model import MyModel
@@ -19,7 +18,9 @@ KERNAL_SIZE1 = 512
 KERNAL_SIZE2 = 256
 TOLERANCE_EPOCH = 1000
 STOP_THRESHOLD = 1e-5
-
+ALPHA = 0
+BETA = 0
+GAMA = 1e-2
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
@@ -42,7 +43,7 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
         adj_traget = torch.FloatTensor(graph_train)
         model = MyModel(disease_feature,disease_graph1,disease_graph2,disease_graph3,miRNA_feature,miRNA_graph1,miRNA_graph2,miRNA_graph3)
         obj = Myloss(adj_traget)
-        optimizer = torch.optim.Adam(model.parameters(), lr=LR, amsgrad=True)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LR, amsgrad=True,weight_decay=GAMA)
         evaluator = Evaluator(graph_train, graph_test)
         obj_test = Myloss(torch.FloatTensor(graph_test))
 
@@ -50,7 +51,7 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
             model.train()
             optimizer.zero_grad()
             Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3 =  model()
-            loss = obj.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3)
+            loss = obj.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
             loss.backward()
 
             optimizer.step()
@@ -61,7 +62,8 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
                 model.eval()
                 with torch.no_grad():
                     Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3 = model()
-                    test_loss = obj_test.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3)
+                    test_loss = obj_test.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
+                    Y_hat = torch.sigmoid(Y_hat)
                     auc_test, aupr_test = evaluator.eval(Y_hat)
 
                     print(
