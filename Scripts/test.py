@@ -38,12 +38,12 @@ from torch import nn
 
 
 
-edge_index = t.tensor([[0,2,1,3],[1,3,0,2]],dtype= t.long)
-# x = t.tensor([[-1],[0],[1],[2],[3]],dtype= t.float)
-data = Data(edge_index= edge_index)
-print(data)
-print(data.num_edges)
-print(data.contains_isolated_nodes())
+# edge_index = t.tensor([[0,2,1,3],[1,3,0,2]],dtype= t.long)
+# # x = t.tensor([[-1],[0],[1],[2],[3]],dtype= t.float)
+# data = Data(edge_index= edge_index)
+# print(data)
+# print(data.num_edges)
+# print(data.contains_isolated_nodes())
 # edge_index = t.tensor([[0,1],[1,0],[1,2],[2,1],[2,3],[3,2],[3,4],[4,3]],dtype= t.long)
 # x = t.tensor([[-1],[0],[1],[2],[3]],dtype= t.float)
 # data = Data(x = x,edge_index= edge_index.t().contiguous())
@@ -144,3 +144,34 @@ import random
 # output = loss(input, target)
 # print("*"*100)
 # print(output)
+
+# import  numpy as np
+# import torch
+# train_adj = torch.Tensor([[0,1,1],[0,0,1]])
+#
+# m = train_adj.shape[0]
+# n = train_adj.shape[1]
+#
+# eval_coord = [(i,j) for i in range(m) for j in range(n)]
+# train_edge_x , train_edge_y = train_adj.numpy().nonzero()
+# eval_coord = set(eval_coord) - set(set(zip(train_edge_x, train_edge_y)))
+# eval_coord = np.array(list(eval_coord))
+# eval_coord = np.array(list(eval_coord))
+
+
+import torch as t
+from DataPreprocess import DataReader
+conv1 = t.nn.Conv2d(in_channels= 1 , out_channels= 2,kernel_size=(1,3),padding=(0,2))
+conv2 = t.nn.Conv2d(in_channels=2, out_channels=1, kernel_size=(1, 3))
+X = DataReader.read_excel("../Data/Features/miRNAFeatureCompressed.xlsx")
+X = torch.relu(X)
+X = X.view(1,1,X.size(0),X.size(1))
+X = conv1(X)
+X = t.relu(X)
+X = conv2(X)
+X = t.relu(X)
+X = X.view(X.size(2), X.size(3))
+print(X.shape)
+print(X)
+
+

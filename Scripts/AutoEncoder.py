@@ -3,8 +3,6 @@ import numpy as np
 import pandas as pd
 import torch as  t
 import torch.nn.functional as F
-# from torch.utils.data import DataLoader
-# from MyDataSet import  MyDataSet
 from torch.utils.data import Dataset,DataLoader
 
 

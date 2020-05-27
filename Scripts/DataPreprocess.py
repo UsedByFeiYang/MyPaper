@@ -1,8 +1,7 @@
 import pandas as pd
 import torch as t
-import random
 import  numpy as np
-
+from sklearn.model_selection import  KFold
 
 
 class DataReader(object):
@@ -33,71 +32,50 @@ class GraphPreprecess(object):
 
 
 class adjTrainTestSplit():
-    @staticmethod
-    def prepare_data(path,splitRate):
-        dataset = dict()
-        dataset['adj'] = DataReader.read_excel(path)
+
+    def __init__(self,datatset):
+        self.pairs  = datatset.nonzero().numpy()
+        self.shape0 = datatset.shape[0]
+        self.shape1 = datatset.shape[1]
+
+    def split_graph(self,kfold, seed):
+        if kfold is not None:
+            prng = np.random.RandomState(seed)
+            kf = KFold(n_splits=kfold, random_state=prng, shuffle=True)
+            graph_train_kfold = []
+            graph_test_kfold = []
+            for train_indices, test_indices in kf.split(self.pairs):
+                graph_train = np.zeros((self.shape0, self.shape1))
+                graph_test = np.zeros((self.shape0, self.shape1))
+
+                pair_x_train, pair_y_train = self.pairs[train_indices, 0], self.pairs[train_indices, 1]
+                graph_train[pair_x_train, pair_y_train] = 1
+                # graph_train[pair_y_train, pair_x_train] = 1
+
+                pair_x_test, pair_y_test = self.pairs[test_indices, 0], self.pairs[test_indices, 1]
+                graph_test[pair_x_test, pair_y_test] = 1
 
 
-        m,n = dataset['adj'].size()
-        trainLen = int(m * splitRate)
+                graph_train_kfold.append(graph_train)
+                graph_test_kfold.append(graph_test)
 
-        trainWeight = t.zeros((m,n))
-        testWeight = t.zeros((m,n))
+            return graph_train_kfold, graph_test_kfold
 
-        one_index = t.nonzero(dataset['adj']).tolist()
-
-        random.shuffle(one_index)
-
-        train_one_index = one_index[:trainLen]
-        test_one_index  = one_index[trainLen:]
-
-        train_one_index_tensor = t.LongTensor(train_one_index)
-        test_one_index_tensor = t.LongTensor(test_one_index)
-
-        trainWeight[train_one_index_tensor[:,0],train_one_index_tensor[:,1]] = 1
-        testWeight[test_one_index_tensor[:,0],test_one_index_tensor[:,0]]  = 1
-
-        dataset['train'] = trainWeight
-        dataset['test'] = testWeight
-        return dataset
-
-def split_graph(kfold, pairs, num_node, seed):
-    if kfold is not None:
-        prng = np.random.RandomState(seed)
-        kf = KFold(n_splits=kfold, random_state=prng, shuffle=True)
-
-        graph_train_kfold = []
-        graph_test_kfold = []
-        for train_indices, test_indices in kf.split(pairs):
-            graph_train = np.zeros((num_node, num_node))
-            graph_test = np.zeros((num_node, num_node))
-
-            pair_x_train, pair_y_train = pairs[train_indices, 0], pairs[train_indices, 1]
+        else:
+            graph_train = np.zeros((self.shape0, self.shape1))
+            pair_x_train, pair_y_train = self.pairs[:, 0], self.pairs[:, 1]
             graph_train[pair_x_train, pair_y_train] = 1
-            graph_train[pair_y_train, pair_x_train] = 1
-
-            pair_x_test, pair_y_test = pairs[test_indices, 0], pairs[test_indices, 1]
-            graph_test[pair_x_test, pair_y_test] = 1
-            graph_test[pair_y_test, pair_x_test] = 1
-
-            graph_train_kfold.append(graph_train)
-            graph_test_kfold.append(graph_test)
-
-        return graph_train_kfold, graph_test_kfold
-
-    else:
-        graph_train = np.zeros((num_node, num_node))
-        pair_x_train, pair_y_train = pairs[:, 0], pairs[:, 1]
-        graph_train[pair_x_train, pair_y_train] = 1
-        graph_train[pair_y_train, pair_x_train] = 1
-
-        return graph_train
+            return graph_train
 
 if __name__ == '__main__':
-    MSS = pd.read_excel("../Data/miRNA/MS_Function.xlsx")
-    MSS = t.FloatTensor(MSS.values)
-    ds = GraphPreprecess(MSS)
-    # ds.Get_Data(ds)
-    print(ds.data['edge'])
-    print(ds.data['edge'].size(1))
+    # MSS = pd.read_excel("../Data/miRNA/MS_Function.xlsx")
+    # MSS = t.FloatTensor(MSS.values)
+    # ds = GraphPreprecess(MSS)
+    # print(ds.data['edge'])
+    # print(ds.data['edge'].size(1))
+
+    MD = DataReader.read_excel("../Data/MD.xlsx")
+    adj = adjTrainTestSplit(MD)
+    train,test = adj.split_graph(5,3)
+    print(type(train[0]))
+    print(train[0])
