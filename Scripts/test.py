@@ -159,19 +159,26 @@ import random
 # eval_coord = np.array(list(eval_coord))
 
 
-import torch as t
-from DataPreprocess import DataReader
-conv1 = t.nn.Conv2d(in_channels= 1 , out_channels= 2,kernel_size=(1,3),padding=(0,2))
-conv2 = t.nn.Conv2d(in_channels=2, out_channels=1, kernel_size=(1, 3))
-X = DataReader.read_excel("../Data/Features/miRNAFeatureCompressed.xlsx")
-X = torch.relu(X)
-X = X.view(1,1,X.size(0),X.size(1))
-X = conv1(X)
-X = t.relu(X)
-X = conv2(X)
-X = t.relu(X)
-X = X.view(X.size(2), X.size(3))
-print(X.shape)
-print(X)
+# import torch as t
+# from DataPreprocess import DataReader
+# conv1 = t.nn.Conv2d(in_channels= 1 , out_channels= 2,kernel_size=(1,3),padding=(0,2))
+# conv2 = t.nn.Conv2d(in_channels=2, out_channels=1, kernel_size=(1, 3))
+# X = DataReader.read_excel("../Data/Features/miRNAFeatureCompressed.xlsx")
+# X = torch.relu(X)
+# X = X.view(1,1,X.size(0),X.size(1))
+# X = conv1(X)
+# X = t.relu(X)
+# X = conv2(X)
+# X = t.relu(X)
+# X = X.view(X.size(2), X.size(3))
+# print(X.shape)
+# print(X)
+
+### roc_auc_score
+import numpy as np
+from sklearn.metrics import roc_auc_score
+# y_true = np.array([0, 0, 1, 1])
+# y_scores = np.array([0.1, 0.4, 0.35, 0.8])
+# ret = roc_auc_score(y_true, y_scores)
 
 

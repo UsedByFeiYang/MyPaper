@@ -119,4 +119,3 @@ if __name__ == '__main__':
     M_D = DataReader.read_excel("../Data/MD.xlsx")
 
     main(M_D,D_F,DSP,DSSE,DSSY,M_F,MSS,MSG,MSF)
-

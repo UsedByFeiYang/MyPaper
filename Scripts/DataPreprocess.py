@@ -14,6 +14,8 @@ class DataReader(object):
     @staticmethod
     def read_txt(path):
         df = pd.read_csv(path, sep='\t', index_col=0)
+        if "Unnamed: 0" in df.columns.tolist():
+            del df['Unnamed: 0']
         return t.FloatTensor(df.values)
 
 
