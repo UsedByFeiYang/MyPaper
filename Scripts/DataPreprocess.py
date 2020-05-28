@@ -9,6 +9,8 @@ class DataReader(object):
     @staticmethod
     def read_excel(path):
         df = pd.read_excel(path)
+        if "Unnamed: 0" in df.columns.tolist():
+            del df['Unnamed: 0']
         return t.FloatTensor(df.values)
 
     @staticmethod
