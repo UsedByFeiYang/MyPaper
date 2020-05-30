@@ -23,6 +23,18 @@ def RWR(adj,S,iternum = 2,alpha = 0.5):
         adj = adj + alpha * Init_adj
     return pd.DataFrame(adj)
 
+def informationFlow(adj,S,alpha = 0.5):
+    Row_Normalization(S)
+    Row_Normalization(adj)
+    S = np.matrix(S.values)
+    adj = np.matrix(adj.values)
+    I = np.identity(len(S))
+    ret = adj * (I - alpha* S).I
+    return ret
+
+
+
+
 def Save(df,savename):
     path =  "../Data/Features/" + savename
     df.to_csv(path,sep="\t")
@@ -31,10 +43,12 @@ def Save(df,savename):
 if __name__ == '__main__':
     DG = pd.read_csv("../Data/Disease/DG.txt",sep='\t',index_col=0)
     GG = pd.read_csv("../Data/gene/GG.txt",sep='\t',index_col=0)
-    MG = pd.read_csv("../Data/miRNA/MG.txt",sep='\t',index_col=0)
-    DG = RWR(DG,GG,50)
-    print(DG)
-    MG = RWR(MG,GG,50)
-    print(MG.iloc[0,:])
-    Save(DG,"DiseaseFeature.txt")
-    Save(MG,"MiRNAFeature.txt")
+    # MG = pd.read_csv("../Data/miRNA/MG.txt",sep='\t',index_col=0)
+    DG = informationFlow(DG,GG)
+    print(np.max(DG))
+    print(np.min(DG))
+    print(DG[0,:])
+    # MG = RWR(MG,GG,50)
+    # print(MG.iloc[0,:])
+    # Save(DG,"DiseaseFeature.txt")
+    # Save(MG,"MiRNAFeature.txt")

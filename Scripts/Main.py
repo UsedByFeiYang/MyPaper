@@ -91,28 +91,28 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
 
 if __name__ == '__main__':
     # load data of miRNA
-    MSS = DataReader.read_excel("../Data/miRNA/MS_Sequence.xlsx")
+    MSS = DataReader.read_npy("../Data/miRNA/MS_Sequence.npy")
     MSS = GraphPreprecess(MSS)
 
-    MSG = DataReader.read_excel("../Data/miRNA/MS_GO.xlsx")
+    MSG = DataReader.read_npy("../Data/miRNA/MS_GO.npy")
     MSG = GraphPreprecess(MSG)
 
-    MSF = DataReader.read_excel("../Data/miRNA/MS_Function.xlsx")
+    MSF = DataReader.read_npy("../Data/miRNA/MS_Function.npy")
     MSF = GraphPreprecess(MSF)
 
-    M_F = DataReader.read_excel("../Data/Features/miRNAFeatureCompressed.xlsx")
+    M_F = DataReader.read_npy("../Data/Features/miRNAFeatureCompressed.npy")
 
     #load data of disease
-    DSP = DataReader.read_excel("../Data/Disease/DS_Phenotype.xlsx")
+    DSP = DataReader.read_npy("../Data/Disease/DS_Phenotype.npy")
     DSP = GraphPreprecess(DSP)
 
-    DSSE = DataReader.read_excel("../Data/Disease/DS_Semantic.xlsx")
+    DSSE = DataReader.read_npy("../Data/Disease/DS_Semantic.npy")
     DSSE = GraphPreprecess(DSSE)
 
-    DSSY = DataReader.read_excel("../Data/Disease/DS_Symptom.xlsx")
+    DSSY = DataReader.read_npy("../Data/Disease/DS_Symptom.npy")
     DSSY = GraphPreprecess(DSSY)
 
-    D_F = DataReader.read_excel("../Data/Features/DiseaseFeatureCompressed.xlsx")
+    D_F = DataReader.read_npy("../Data/Features/DiseaseFeatureCompressed.npy")
 
 
     #load data of miRNA-disease association

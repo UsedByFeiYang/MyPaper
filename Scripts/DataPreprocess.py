@@ -14,6 +14,11 @@ class DataReader(object):
         return t.FloatTensor(df.values)
 
     @staticmethod
+    def read_npy(path):
+        df = np.load(path)
+        return t.FloatTensor(df)
+
+    @staticmethod
     def read_txt(path):
         df = pd.read_csv(path, sep='\t', index_col=0)
         if "Unnamed: 0" in df.columns.tolist():
