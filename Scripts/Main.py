@@ -12,7 +12,7 @@ EPOCH = 2000
 SEED = 123
 KFold = 5
 EVAL_INTER = 50
-LR = 0.01
+LR = 0.0001
 USE_BIAS = False
 KERNAL_SIZE1 = 512
 KERNAL_SIZE2 = 256
@@ -24,12 +24,10 @@ GAMA = 1e-2
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
-
 def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2,disease_graph3,miRNA_feature,miRNA_graph1,miRNA_graph2,miRNA_graph3):
 
     adjProcess = adjTrainTestSplit(miRNA_Disease_Association)
     graph_train_kfold, graph_test_kfold = adjProcess.split_graph(KFold,SEED)
-
 
     auc_kfold = []
     aupr_kfold = []
@@ -39,19 +37,29 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
         graph_train = graph_train_kfold[i]
         graph_test = graph_test_kfold[i]
 
+        m = graph_train.shape[0]
+        n = graph_train.shape[1]
+        eval_coord = [(i, j) for i in range(m) for j in range(n)]
+        train_edge_x, train_edge_y = graph_train.nonzero()
+        one_index = list(zip(train_edge_x, train_edge_y))
+        zero_index = set(eval_coord) - set(set(zip(train_edge_x, train_edge_y)))
+        zero_index = list(zero_index)
 
         adj_traget = torch.FloatTensor(graph_train)
         model = MyModel(disease_feature,disease_graph1,disease_graph2,disease_graph3,miRNA_feature,miRNA_graph1,miRNA_graph2,miRNA_graph3)
-        obj = Myloss(adj_traget)
+        model.cuda()
+        obj = Myloss(adj_traget.cuda())
         optimizer = torch.optim.Adam(model.parameters(), lr=LR, amsgrad=True,weight_decay=GAMA)
         evaluator = Evaluator(graph_train, graph_test)
-        obj_test = Myloss(torch.FloatTensor(graph_test))
+        obj_test = Myloss(torch.FloatTensor(graph_test).cuda())
 
         for j in range(EPOCH):
             model.train()
             optimizer.zero_grad()
             Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3 =  model()
-            loss = obj.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
+            #loss = obj.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
+            # loss = obj.cal_loss(Y_hat,one_index,zero_index)
+            loss = obj.cal_loss(Y_hat,one_index,zero_index,m_x0,m_x1,m_x2,m_x3,d_x0, d_x1, d_x2,d_x3)
             loss.backward()
 
             optimizer.step()
@@ -62,14 +70,19 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
                 model.eval()
                 with torch.no_grad():
                     Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3 = model()
-                    test_loss = obj_test.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
-                    Y_hat = torch.sigmoid(Y_hat)
-                    auc_test, aupr_test = evaluator.eval(Y_hat)
+                    #test_loss = obj_test.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
+                   # Y_hat = torch.sigmoid(Y_hat)
+                    eval_coord = [(i, j) for i in range(m) for j in range(n)]
+                    test_edge_x, test_edge_y = graph_test.nonzero()
+                    test_one_index = list(zip(test_edge_x, test_edge_y))
+                    test_zero_index = set(eval_coord) - set(set(zip(test_edge_x, test_edge_y)))
+                    test_zero_index = list(test_zero_index)
+                    #test_loss = obj_test.cal_loss(Y_hat, test_one_index, test_zero_index)
+                    auc_test, aupr_test = evaluator.eval(Y_hat.cpu())
 
                     print(
                         "Epoch:", '%04d' % (j + 1),
                         "train_loss=", "{:0>9.5f}".format(loss.item()),
-                        "test_loss=", "{:0>9.5f}".format(test_loss.item()),
                         "test_auc=", "{:.5f}".format(auc_test),
                         "test_aupr=", "{:.5f}".format(aupr_test),
                         "time=", "{:.2f}".format(time.time() - t))
@@ -100,7 +113,7 @@ if __name__ == '__main__':
     MSF = DataReader.read_npy("../Data/miRNA/MS_Function.npy")
     MSF = GraphPreprecess(MSF)
 
-    M_F = DataReader.read_npy("../Data/Features/miRNAFeatureCompressed.npy")
+    #M_F = DataReader.read_npy("../Data/Features/miRNAFeatureCompressed.npy")
 
     #load data of disease
     DSP = DataReader.read_npy("../Data/Disease/DS_Phenotype.npy")
@@ -112,10 +125,12 @@ if __name__ == '__main__':
     DSSY = DataReader.read_npy("../Data/Disease/DS_Symptom.npy")
     DSSY = GraphPreprecess(DSSY)
 
-    D_F = DataReader.read_npy("../Data/Features/DiseaseFeatureCompressed.npy")
+    #D_F = DataReader.read_npy("../Data/Features/DiseaseFeatureCompressed.npy")
 
 
     #load data of miRNA-disease association
-    M_D = DataReader.read_excel("../Data/MD.xlsx")
-
-    main(M_D,D_F,DSP,DSSE,DSSY,M_F,MSS,MSG,MSF)
+    M_D = DataReader.read_npy("../Data/MD.npy")
+    t.manual_seed(1)
+    M_F = t.eye(M_D.shape[0], 128)
+    D_F = t.eye(M_D.shape[1], 128)
+    main(M_D,D_F,DSSY,DSSE,DSP,M_F,MSS,MSF,MSG)

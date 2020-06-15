@@ -24,11 +24,11 @@ class SingleModule(nn.Module):
         self.cnn = ConvModel()
 
     def forward(self, X,adj):
-        X = self.gcn1(X,adj.data['edge'],adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]])
+        X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
         X = t.relu(X)
-        X = self.gcn2(X, adj.data['edge'], adj.data['weight'][adj.data['edge'][0], adj.data['edge'][1]])
+        X = self.gcn2(X.cuda(), adj.data['edge'].cuda(), adj.data['weight'][adj.data['edge'][0].cuda(), adj.data['edge'][1]].cuda())
         X = t.relu(X)
-        X = self.cnn(X)
+        #X = self.cnn(X)
         return X
 
 class SubModel(nn.Module):
@@ -50,15 +50,17 @@ class SubModel(nn.Module):
 
 
     def forward(self):
-        X0 = self.origin(self.X)
+        #X0 = self.origin(self.X.cuda())
 
 
         X1 = self.model1(self.X,self.graph1)
         X2 = self.model2(self.X, self.graph2)
         X3 = self.model3(self.X, self.graph3)
-        X = X0 + X1 + X2 + X3
+        #X = X0 + X1 + X2 + X3
+        X = X1 + X2 + X3
 
-        return X,X0,X1,X2,X3
+        #return X,X0,X1,X2,X3
+        return X, self.X, X1, X2, X3
 
 
 
