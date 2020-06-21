@@ -8,19 +8,19 @@ import  time
 
 
 # Hyperparameter
-EPOCH = 2000
+EPOCH = 3000
 SEED = 123
 KFold = 5
-EVAL_INTER = 50
+EVAL_INTER = 10
 LR = 0.0001
 USE_BIAS = False
 KERNAL_SIZE1 = 512
 KERNAL_SIZE2 = 256
-TOLERANCE_EPOCH = 1000
-STOP_THRESHOLD = 1e-5
-ALPHA = 0
-BETA = 0
-GAMA = 1e-2
+TOLERANCE_EPOCH = 2000
+STOP_THRESHOLD = 1e-3
+ALPHA = 1
+BETA = 1
+GAMA = 1
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
@@ -57,9 +57,10 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
             model.train()
             optimizer.zero_grad()
             Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3 =  model()
-            #loss = obj.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
+            loss = obj.cal_loss(Y_hat, m_x0.cuda(), m_x1.cuda(), m_x2.cuda(), m_x3.cuda(), d_x0.cuda(), d_x1.cuda(), d_x2.cuda(), d_x3.cuda(),ALPHA,BETA,GAMA)
+            loss = loss.cuda()
             # loss = obj.cal_loss(Y_hat,one_index,zero_index)
-            loss = obj.cal_loss(Y_hat,one_index,zero_index,m_x0,m_x1,m_x2,m_x3,d_x0, d_x1, d_x2,d_x3)
+            #loss = obj.cal_loss(Y_hat,one_index,zero_index,m_x0,m_x1,m_x2,m_x3,d_x0, d_x1, d_x2,d_x3)
             loss.backward()
 
             optimizer.step()
@@ -104,7 +105,8 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
 
 if __name__ == '__main__':
     # load data of miRNA
-    MSS = DataReader.read_npy("../Data/miRNA/MS_Sequence.npy")
+    # MSS = DataReader.read_npy("../Data/miRNA/MS_Sequence.npy")
+    MSS = DataReader.read_npy("../Data/miRNA/MS_SequenceMean.npy")
     MSS = GraphPreprecess(MSS)
 
     MSG = DataReader.read_npy("../Data/miRNA/MS_GO.npy")
@@ -116,7 +118,8 @@ if __name__ == '__main__':
     #M_F = DataReader.read_npy("../Data/Features/miRNAFeatureCompressed.npy")
 
     #load data of disease
-    DSP = DataReader.read_npy("../Data/Disease/DS_Phenotype.npy")
+    # DSP = DataReader.read_npy("../Data/Disease/DS_Phenotype.npy")
+    DSP = DataReader.read_npy("../Data/Disease/DS_PhenotypeMean.npy")
     DSP = GraphPreprecess(DSP)
 
     DSSE = DataReader.read_npy("../Data/Disease/DS_Semantic.npy")

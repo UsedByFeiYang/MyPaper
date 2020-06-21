@@ -60,7 +60,8 @@ class SubModel(nn.Module):
         X = X1 + X2 + X3
 
         #return X,X0,X1,X2,X3
-        return X, self.X, X1, X2, X3
+        #return X, self.X,
+        return X,X1, X2, X3
 
 
 
@@ -83,10 +84,10 @@ class MyModel(nn.Module):
         self.miRNA_model   = SubModel(self.miRNA_feature,self.miRNA_graph1,self.miRNA_graph2,self.miRNA_graph3)
 
     def forward(self):
-        m_x,m_x0,m_x1,m_x2,m_x3 = self.miRNA_model()
-        d_x,d_x0, d_x1, d_x2, d_x3 = self.disease_model()
+        m_x,m_x1,m_x2,m_x3 = self.miRNA_model()
+        d_x, d_x1, d_x2, d_x3 = self.disease_model()
         Y_hat = t.mm(m_x,d_x.T)
-        return Y_hat,m_x0,m_x1,m_x2,m_x3,d_x0, d_x1, d_x2,d_x3
+        return Y_hat,m_x,m_x1,m_x2,m_x3,d_x, d_x1, d_x2,d_x3
 
 
 
