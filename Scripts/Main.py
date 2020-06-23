@@ -8,7 +8,7 @@ import  time
 
 
 # Hyperparameter
-EPOCH = 3000
+EPOCH = 5000
 SEED = 123
 KFold = 5
 EVAL_INTER = 10
@@ -16,8 +16,8 @@ LR = 0.0001
 USE_BIAS = False
 KERNAL_SIZE1 = 512
 KERNAL_SIZE2 = 256
-TOLERANCE_EPOCH = 2000
-STOP_THRESHOLD = 1e-3
+TOLERANCE_EPOCH = 4000
+STOP_THRESHOLD = 1e-5
 ALPHA = 1
 BETA = 1
 GAMA = 1
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     MSF = DataReader.read_npy("../Data/miRNA/MS_Function.npy")
     MSF = GraphPreprecess(MSF)
 
-    #M_F = DataReader.read_npy("../Data/Features/miRNAFeatureCompressed.npy")
+    M_F = DataReader.read_npy("../Data/Features/miRNAFeatureCompressed.npy")
 
     #load data of disease
     # DSP = DataReader.read_npy("../Data/Disease/DS_Phenotype.npy")
@@ -128,12 +128,12 @@ if __name__ == '__main__':
     DSSY = DataReader.read_npy("../Data/Disease/DS_Symptom.npy")
     DSSY = GraphPreprecess(DSSY)
 
-    #D_F = DataReader.read_npy("../Data/Features/DiseaseFeatureCompressed.npy")
+    D_F = DataReader.read_npy("../Data/Features/DiseaseFeatureCompressed.npy")
 
 
     #load data of miRNA-disease association
     M_D = DataReader.read_npy("../Data/MD.npy")
     t.manual_seed(1)
-    M_F = t.eye(M_D.shape[0], 128)
-    D_F = t.eye(M_D.shape[1], 128)
+    M_F = t.eye(M_D.shape[0], M_D.shape[0])
+    D_F = t.eye(M_D.shape[1], M_D.shape[1])
     main(M_D,D_F,DSSY,DSSE,DSP,M_F,MSS,MSF,MSG)

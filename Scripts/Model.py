@@ -1,6 +1,7 @@
 import torch as t
 from torch import nn
 from torch_geometric.nn import conv
+from torch_geometric.utils import dropout_adj
 
 class ConvModel(nn.Module):
     def __init__(self):
@@ -15,18 +16,43 @@ class ConvModel(nn.Module):
         X = t.relu(X)
         return X.view(X.size(2), X.size(3))
 
+
+class FullConnectedLayer(nn.Module):
+    def __init__(self,featureLen):
+        super(FullConnectedLayer,self).__init__()
+        self.l1 = nn.Linear(featureLen,256)
+        self.l2 = nn.Linear(256, 128)
+        self.l3 = nn.Linear(128, 64)
+
+    def forward(self, input):
+
+        x = t.relu(self.l1(input))
+        x = t.relu(self.l2(x))
+        x = t.relu(self.l3(x))
+        return x
+
+
+
+
+
 class SingleModule(nn.Module):
     def __init__(self,featureLen):
         super(SingleModule,self).__init__()
 
         self.gcn1 = conv.GCNConv(featureLen,featureLen)
         self.gcn2 = conv.GCNConv(featureLen,featureLen)
-        self.cnn = ConvModel()
+        #self.cnn = ConvModel()
+        #self.linear = FullConnectedLayer(featureLen)
 
     def forward(self, X,adj):
-        X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
+
+        edge_index,edge_weight = dropout_adj(adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda(),p=0.3)
+        #X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
+
+        X = self.gcn1(X.cuda(), edge_index,edge_weight)
         X = t.relu(X)
-        X = self.gcn2(X.cuda(), adj.data['edge'].cuda(), adj.data['weight'][adj.data['edge'][0].cuda(), adj.data['edge'][1]].cuda())
+        #X = self.gcn2(X.cuda(), adj.data['edge'].cuda(), adj.data['weight'][adj.data['edge'][0].cuda(), adj.data['edge'][1]].cuda())
+        X = self.gcn2(X.cuda(), edge_index, edge_weight)
         X = t.relu(X)
         #X = self.cnn(X)
         return X
@@ -39,25 +65,33 @@ class SubModel(nn.Module):
         self.graph1 = graph1
         self.graph2 = graph2
         self.graph3 = graph3
-        self.X = X
+        self.X = X.cuda()
 
         #model
         self.model1 = SingleModule(self.X.size(1))
         self.model2 = SingleModule(self.X.size(1))
         self.model3 = SingleModule(self.X.size(1))
+        self.linear1 = FullConnectedLayer(self.X.size(1))
+        self.linear2 = FullConnectedLayer(self.X.size(1))
 
-        self.origin = ConvModel()
+
+        #self.origin = ConvModel()
 
 
     def forward(self):
         #X0 = self.origin(self.X.cuda())
-
-
+        X0 = self.linear1(self.X)
         X1 = self.model1(self.X,self.graph1)
+        X1 = self.linear2(X1)
+
         X2 = self.model2(self.X, self.graph2)
+        X2 = self.linear2(X2)
+
         X3 = self.model3(self.X, self.graph3)
-        #X = X0 + X1 + X2 + X3
-        X = X1 + X2 + X3
+        X3 = self.linear2(X3)
+
+        X = X0 + X1 + X2 + X3
+        #X = X1 + X2 + X3
 
         #return X,X0,X1,X2,X3
         #return X, self.X,
