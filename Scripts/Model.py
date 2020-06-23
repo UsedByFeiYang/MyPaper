@@ -24,10 +24,15 @@ class FullConnectedLayer(nn.Module):
         self.l2 = nn.Linear(256, 128)
         self.l3 = nn.Linear(128, 64)
 
+        self.dropout1 = nn.Dropout(p=0)
+        self.dropout2 = nn.Dropout(p = 0)
+
     def forward(self, input):
 
         x = t.relu(self.l1(input))
+        x = self.dropout1(x)
         x = t.relu(self.l2(x))
+        x = self.dropout2(x)
         x = t.relu(self.l3(x))
         return x
 
@@ -46,7 +51,7 @@ class SingleModule(nn.Module):
 
     def forward(self, X,adj):
 
-        edge_index,edge_weight = dropout_adj(adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda(),p=0.3)
+        edge_index,edge_weight = dropout_adj(adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda(),p=0)
         #X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
 
         X = self.gcn1(X.cuda(), edge_index,edge_weight)

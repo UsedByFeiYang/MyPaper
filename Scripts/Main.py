@@ -8,7 +8,7 @@ import  time
 
 
 # Hyperparameter
-EPOCH = 5000
+EPOCH = 2000
 SEED = 123
 KFold = 5
 EVAL_INTER = 10
@@ -16,8 +16,8 @@ LR = 0.0001
 USE_BIAS = False
 KERNAL_SIZE1 = 512
 KERNAL_SIZE2 = 256
-TOLERANCE_EPOCH = 4000
-STOP_THRESHOLD = 1e-5
+TOLERANCE_EPOCH = 1500
+STOP_THRESHOLD = 1e-4
 ALPHA = 1
 BETA = 1
 GAMA = 1
@@ -37,13 +37,13 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
         graph_train = graph_train_kfold[i]
         graph_test = graph_test_kfold[i]
 
-        m = graph_train.shape[0]
-        n = graph_train.shape[1]
-        eval_coord = [(i, j) for i in range(m) for j in range(n)]
-        train_edge_x, train_edge_y = graph_train.nonzero()
-        one_index = list(zip(train_edge_x, train_edge_y))
-        zero_index = set(eval_coord) - set(set(zip(train_edge_x, train_edge_y)))
-        zero_index = list(zero_index)
+        # m = graph_train.shape[0]
+        # n = graph_train.shape[1]
+        # eval_coord = [(i, j) for i in range(m) for j in range(n)]
+        # train_edge_x, train_edge_y = graph_train.nonzero()
+        # one_index = list(zip(train_edge_x, train_edge_y))
+        # zero_index = set(eval_coord) - set(set(zip(train_edge_x, train_edge_y)))
+        # zero_index = list(zero_index)
 
         adj_traget = torch.FloatTensor(graph_train)
         model = MyModel(disease_feature,disease_graph1,disease_graph2,disease_graph3,miRNA_feature,miRNA_graph1,miRNA_graph2,miRNA_graph3)
@@ -51,7 +51,7 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
         obj = Myloss(adj_traget.cuda())
         optimizer = torch.optim.Adam(model.parameters(), lr=LR, amsgrad=True,weight_decay=GAMA)
         evaluator = Evaluator(graph_train, graph_test)
-        obj_test = Myloss(torch.FloatTensor(graph_test).cuda())
+        #obj_test = Myloss(torch.FloatTensor(graph_test).cuda())
 
         for j in range(EPOCH):
             model.train()
@@ -62,7 +62,6 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
             # loss = obj.cal_loss(Y_hat,one_index,zero_index)
             #loss = obj.cal_loss(Y_hat,one_index,zero_index,m_x0,m_x1,m_x2,m_x3,d_x0, d_x1, d_x2,d_x3)
             loss.backward()
-
             optimizer.step()
 
             need_early_stop_check = j > TOLERANCE_EPOCH and abs((loss.item() - last_loss) / last_loss) < STOP_THRESHOLD
@@ -73,12 +72,12 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
                     Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3 = model()
                     #test_loss = obj_test.cal_loss(Y_hat, m_x0, m_x1, m_x2, m_x3, d_x0, d_x1, d_x2, d_x3,ALPHA,BETA)
                    # Y_hat = torch.sigmoid(Y_hat)
-                    eval_coord = [(i, j) for i in range(m) for j in range(n)]
-                    test_edge_x, test_edge_y = graph_test.nonzero()
-                    test_one_index = list(zip(test_edge_x, test_edge_y))
-                    test_zero_index = set(eval_coord) - set(set(zip(test_edge_x, test_edge_y)))
-                    test_zero_index = list(test_zero_index)
-                    #test_loss = obj_test.cal_loss(Y_hat, test_one_index, test_zero_index)
+                   #  eval_coord = [(i, j) for i in range(m) for j in range(n)]
+                   #  test_edge_x, test_edge_y = graph_test.nonzero()
+                   #  test_one_index = list(zip(test_edge_x, test_edge_y))
+                   #  #test_zero_index = set(eval_coord) - set(set(zip(test_edge_x, test_edge_y)))
+                   #  test_zero_index = list(test_zero_index)
+                   #  #test_loss = obj_test.cal_loss(Y_hat, test_one_index, test_zero_index)
                     auc_test, aupr_test = evaluator.eval(Y_hat.cpu())
 
                     print(
@@ -97,11 +96,13 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
                     break
 
             last_loss = loss.item()
+            torch.cuda.empty_cache()
 
     print("\nOptimization Finished!")
     mean_auc = sum(auc_kfold)/len(auc_kfold)
     mean_aupr = sum(aupr_kfold)/len(aupr_kfold)
     print("mean_auc:{0:.3f},mean_aupr:{1:.3f}".format(mean_auc,mean_aupr))
+
 
 if __name__ == '__main__':
     # load data of miRNA
