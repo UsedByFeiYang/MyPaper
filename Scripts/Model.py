@@ -41,11 +41,11 @@ class FullConnectedLayer(nn.Module):
 class AttentionLayer(nn.Module):
     def __init__(self,featurelen):
         super(AttentionLayer,self).__init__()
-        self.l0 = nn.Linear(featurelen, 32)
-        self.l1 = nn.Linear(featurelen,32)
-        self.l2 = nn.Linear(featurelen, 32)
-        self.l3 = nn.Linear(featurelen, 32)
-        self.ls = nn.Linear(32, 128)
+        self.l0 = nn.Linear(featurelen, 16)
+        self.l1 = nn.Linear(featurelen,16)
+        self.l2 = nn.Linear(featurelen, 16)
+        self.l3 = nn.Linear(featurelen, 16)
+        self.ls = nn.Linear(16, 64)
     def forward(self,X0,X1,X2,X3):
         X0 = self.l0(X0)
         X1 = self.l1(X1)
