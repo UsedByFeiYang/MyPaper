@@ -66,20 +66,20 @@ class SingleModule(nn.Module):
 
         self.gcn1 = conv.GCNConv(featureLen,featureLen)
         self.gcn2 = conv.GCNConv(featureLen,featureLen)
-        #self.cnn = ConvModel()
-        #self.linear = FullConnectedLayer(featureLen)
 
     def forward(self, X,adj):
 
         edge_index,edge_weight = dropout_adj(adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda(),p=0.2)
-        #X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
-
         X = self.gcn1(X.cuda(), edge_index,edge_weight)
+
+        # X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
         X = t.relu(X)
-        #X = self.gcn2(X.cuda(), adj.data['edge'].cuda(), adj.data['weight'][adj.data['edge'][0].cuda(), adj.data['edge'][1]].cuda())
+
+
         X = self.gcn2(X.cuda(), edge_index, edge_weight)
+        #X = self.gcn2(X.cuda(), adj.data['edge'].cuda(), adj.data['weight'][adj.data['edge'][0].cuda(), adj.data['edge'][1]].cuda())
         X = t.relu(X)
-        #X = self.cnn(X)
+
         return X
 
 class SubModel(nn.Module):
@@ -96,21 +96,20 @@ class SubModel(nn.Module):
         self.model1 = SingleModule(self.X.size(1))
         self.model2 = SingleModule(self.X.size(1))
         self.model3 = SingleModule(self.X.size(1))
-        self.linear1 = FullConnectedLayer(self.X.size(1))
-        self.linear2 = FullConnectedLayer(self.X.size(1))
+        self.linear1 = FullConnectedLayer(self.X.size(1)) #skip connection
+        self.linear2 = FullConnectedLayer(self.X.size(1)) #siamise MLP
 
-        # information fusion
-        self.attention = AttentionLayer(64)
+        #information fusion
+        #self.attention = AttentionLayer(64)
 
-
-        #self.origin = ConvModel()
 
 
     def forward(self):
-        #X0 = self.origin(self.X.cuda())
         X0 = self.linear1(self.X)
+
         X1 = self.model1(self.X,self.graph1)
         X1 = self.linear2(X1)
+
 
         X2 = self.model2(self.X, self.graph2)
         X2 = self.linear2(X2)
@@ -118,14 +117,15 @@ class SubModel(nn.Module):
         X3 = self.model3(self.X, self.graph3)
         X3 = self.linear2(X3)
 
-        #X = X0 + X1 + X2 + X3       # method 1 : element-wise sum
+
+        #information fusion
+        X = X0 + X1 + X2 + X3       # method 1 : element-wise sum
 
         #X = t.cat((X0,X1,X2,X3),1)   # method 2 :concation
 
-        X = self.attention(X0,X1,X2,X3)  #method3: attention
+        #X = self.attention(X0,X1,X2,X3)  #method3: attention
         #return X,X0,X1,X2,X3
-        #return X, self.X,
-        return X,X1, X2, X3
+        return X, X1, X2, X3
 
 
 

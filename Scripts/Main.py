@@ -137,4 +137,6 @@ if __name__ == '__main__':
     t.manual_seed(1)
     M_F = t.eye(M_D.shape[0], M_D.shape[0])
     D_F = t.eye(M_D.shape[1], M_D.shape[1])
+    # M_F = t.randn(M_D.shape[0], 128)
+    # D_F = t.eye(M_D.shape[1], 128)
     main(M_D,D_F,DSSY,DSSE,DSP,M_F,MSS,MSF,MSG)
