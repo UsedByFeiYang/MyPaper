@@ -1,4 +1,5 @@
 import torch as t
+from  torch.nn.functional import  softmax
 from torch import nn
 from torch_geometric.nn import conv
 from torch_geometric.utils import dropout_adj
@@ -37,6 +38,25 @@ class FullConnectedLayer(nn.Module):
         return x
 
 
+class AttentionLayer(nn.Module):
+    def __init__(self,featurelen):
+        super(AttentionLayer,self).__init__()
+        self.l0 = nn.Linear(featurelen, 32)
+        self.l1 = nn.Linear(featurelen,32)
+        self.l2 = nn.Linear(featurelen, 32)
+        self.l3 = nn.Linear(featurelen, 32)
+        self.ls = nn.Linear(32, 128)
+    def forward(self,X0,X1,X2,X3):
+        X0 = self.l0(X0)
+        X1 = self.l1(X1)
+        X2 = self.l2(X2)
+        X3 = self.l3(X3)
+        Au = self.ls(X0 + X1 + X2 + X3)
+        Au = softmax(Au,dim=1)
+        X = t.cat((X0,X1,X2,X3),dim=1)
+        X = t.mul(X,Au)
+        return X
+
 
 
 
@@ -51,7 +71,7 @@ class SingleModule(nn.Module):
 
     def forward(self, X,adj):
 
-        edge_index,edge_weight = dropout_adj(adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda(),p=0)
+        edge_index,edge_weight = dropout_adj(adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda(),p=0.2)
         #X = self.gcn1(X.cuda(),adj.data['edge'].cuda(),adj.data['weight'][adj.data['edge'][0],adj.data['edge'][1]].cuda())
 
         X = self.gcn1(X.cuda(), edge_index,edge_weight)
@@ -79,6 +99,9 @@ class SubModel(nn.Module):
         self.linear1 = FullConnectedLayer(self.X.size(1))
         self.linear2 = FullConnectedLayer(self.X.size(1))
 
+        # information fusion
+        self.attention = AttentionLayer(64)
+
 
         #self.origin = ConvModel()
 
@@ -95,9 +118,11 @@ class SubModel(nn.Module):
         X3 = self.model3(self.X, self.graph3)
         X3 = self.linear2(X3)
 
-        X = X0 + X1 + X2 + X3
-        #X = X1 + X2 + X3
+        #X = X0 + X1 + X2 + X3       # method 1 : element-wise sum
 
+        #X = t.cat((X0,X1,X2,X3),1)   # method 2 :concation
+
+        X = self.attention(X0,X1,X2,X3)  #method3: attention
         #return X,X0,X1,X2,X3
         #return X, self.X,
         return X,X1, X2, X3
