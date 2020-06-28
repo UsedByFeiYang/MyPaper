@@ -5,7 +5,7 @@ from ObjectiveFunction import  Myloss
 from Evaluate import Evaluator
 import numpy as np
 import  time
-
+from Plot_cruve import plot_roc
 
 # Hyperparameter
 EPOCH = 2000
@@ -31,6 +31,8 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
 
     auc_kfold = []
     aupr_kfold = []
+    mean_tpr = 0.0  # 用来记录画平均ROC曲线的信息
+    mean_fpr = np.linspace(0, 1, 100)
 
     for i in range(KFold):
         print("Using {} th fold dataset.".format(i+1))
@@ -78,7 +80,7 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
                    #  #test_zero_index = set(eval_coord) - set(set(zip(test_edge_x, test_edge_y)))
                    #  test_zero_index = list(test_zero_index)
                    #  #test_loss = obj_test.cal_loss(Y_hat, test_one_index, test_zero_index)
-                    auc_test, aupr_test = evaluator.eval(Y_hat.cpu())
+                    auc_test, aupr_test, fpr, tpr = evaluator.eval(Y_hat.cpu())
 
                     print(
                         "Epoch:", '%04d' % (j + 1),
@@ -89,6 +91,8 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
                 if need_early_stop_check or j+1 >= EPOCH:
                     auc_kfold.append(auc_test)
                     aupr_kfold.append(aupr_test)
+                    mean_tpr += np.interp(mean_fpr, fpr, tpr)
+                    mean_tpr[0] = 0.0
                     if need_early_stop_check:
                         print("Early stopping...")
                     else:
@@ -99,6 +103,9 @@ def main(miRNA_Disease_Association,disease_feature,disease_graph1,disease_graph2
             torch.cuda.empty_cache()
 
     print("\nOptimization Finished!")
+    mean_tpr /= KFold
+    mean_tpr[-1] = 1.0
+    np.save("../Data/Result/mean_tpr.npy", mean_tpr)
     mean_auc = sum(auc_kfold)/len(auc_kfold)
     mean_aupr = sum(aupr_kfold)/len(aupr_kfold)
     print("mean_auc:{0:.3f},mean_aupr:{1:.3f}".format(mean_auc,mean_aupr))
@@ -140,3 +147,4 @@ if __name__ == '__main__':
     # M_F = t.randn(M_D.shape[0], 128)
     # D_F = t.eye(M_D.shape[1], 128)
     main(M_D,D_F,DSSY,DSSE,DSP,M_F,MSS,MSF,MSG)
+    plot_roc("../Data/Result/mean_tpr.npy", "../Data/Result/roc.jpg")
